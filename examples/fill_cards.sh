@@ -7,5 +7,6 @@ curl -X POST -H "Content-Type: application/json" -d '{"deck_name": "one", "quest
 curl -X POST -H "Content-Type: application/json" -d '{"deck_name": "two", "question": "fawoiejfaowijefoawejfoawjef", "answer": "lmaooooo", "disabled": 0}' http://localhost:5000/cards/create
 curl -X POST -H "Content-Type: application/json" -d '{"deck_name": "four", "question": "faoijfawlejfaowejf lol", "answer": "what the fuck is this ", "disabled": 4}' http://localhost:5000/cards/create
 curl -X POST -H "Content-Type: application/json" -d '{"deck_name": "five", "question": "lmaoooo", "answer": "what the fuck ", "disabled": 4}' http://localhost:5000/cards/create
+curl -X POST -H "Content-Type: application/json" -d '{"deck_name": "five", "question": "lol", "answer": "what the fuck ", "disabled": 4}' http://localhost:5000/cards/create
 
 

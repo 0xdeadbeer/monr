@@ -4,6 +4,7 @@ import os
 import sys
 import sqlite3
 import logging
+from datetime import datetime, timedelta
 from flask import Flask 
 from flask import g 
 from flask import request 
@@ -118,8 +119,62 @@ def return_cards():
 
 
 # API: fetch cards
-
-
+@flask_app.route("/cards/fetch", methods=["GET"])
+def fetch_cards(): 
+     db_con = get_db()  
+     db_cur = db_con.cursor()
+     output = ""
+     
+     try: 
+          data = request.json       
+          query = "SELECT * FROM cards WHERE 1=1 "
+          params = []
+          
+          if "deck" in data:
+               deck_name = data["deck"]
+               db_cur.execute("SELECT id FROM decks WHERE name=?;", (deck_name,))
+               deck_id = db_cur.fetchone()[0]
+               params.append(deck_id)
+               query += "AND deck_id=? "
+          if "state" in data:
+               state_filter = data["state"]
+               params.append(state_filter)
+               query += "AND state=? "
+          if "disabled" in data: 
+               disabled_filter = data["disabled"]
+               params.append(disabled_filter)
+               query += "AND disabled=? "
+          if "ef_max" in data and "ef_min" in data:
+               ef_min = data["ef_min"]
+               ef_max = data["ef_max"]
+               params.append(ef_min)
+               params.append(ef_max)
+               query += "AND ef_number BETWEEN ? AND ? "
+          if "interval_date" in data:
+               interval_date = datetime.strptime(data["interval_date"], "%Y-%m-%d").date()
+               interval_date = interval_date + timedelta(days=1)
+               params.append(interval_date)
+               query += "AND interval_date <= ? "
+          if "repetitions" in data: 
+               repetitions = data["repetitions"]
+               params.append(repetitions)
+               query += "AND repetitions = ? "
+          if "question" in data: 
+               question = data["question"] 
+               params.append(question)
+               query += "AND question LIKE ? "
+          if "answer" in data:
+               answer = data["answer"]
+               params.append(answer)
+               query += "AND answer LIKE ? "
+          
+          db_cur.execute(query, params)
+          output = db_cur.fetchall()
+     except sqlite3.Error: 
+          return "Error fetching cards with given parameters", 500 
+     except Exception:
+          return "Request invalid", 500
+     return output, 200
 
 # API: create cards
 @flask_app.route("/cards/create", methods=["POST"])

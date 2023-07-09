@@ -4,7 +4,7 @@ MonR is an on-going open-source backend that provides
 an interface for services that want to implement 
 memorization techniques (flashcards) into their apps. 
 
-By far, the best example of a client using this API could be language learning games. 
+By far, the best examples of clients using this API could be language learning games and educational software. 
 I believe such calculations should be left to the backend, and that is why this project was born. 
 
 # Contributions 
@@ -13,5 +13,5 @@ I appreciate and encourage contributions to MonR. If you'd like to contribute to
 
 # License 
 
-This project is licensed under the GNU General Public License v3.0. See the `LICENSE` file for more information.
+This project is licensed under the MIT license. See the `LICENSE` file for more information.
 
