@@ -59,7 +59,7 @@ def create_decks():
     
      try: 
           data = request.json
-          deck_name = data["deck_name"]
+          deck_name = data["deck"]
           
           db_cur.execute("INSERT INTO decks (name) VALUES (?);", (deck_name,))  
           db_con.commit()
@@ -78,7 +78,7 @@ def delete_decks():
      
      try: 
           data = request.json 
-          decks = data["decks"]
+          decks = data["deck"]
           
           if (type(decks) is not list):
                decks = [decks]
@@ -119,17 +119,18 @@ def return_cards():
 
 
 # API: fetch cards
-@flask_app.route("/cards/fetch", methods=["GET"])
+@flask_app.route("/cards/fetch", methods=["POST"])
 def fetch_cards(): 
      db_con = get_db()  
      db_cur = db_con.cursor()
      output = ""
+     json_output = []
      
      try: 
-          data = request.json       
+          data = request.json
           query = "SELECT * FROM cards WHERE 1=1 "
           params = []
-          
+
           if "deck" in data:
                deck_name = data["deck"]
                db_cur.execute("SELECT id FROM decks WHERE name=?;", (deck_name,))
@@ -170,11 +171,20 @@ def fetch_cards():
           
           db_cur.execute(query, params)
           output = db_cur.fetchall()
-     except sqlite3.Error: 
+          output_columns = [desc[0] for desc in db_cur.description]
+
+          # convert the sqlite output into an easy-to-read json structure
+          for output_entry in output: 
+               tmp_json_output = {}
+               for c_index, column in enumerate(output_columns):
+                    tmp_json_output[column] = output_entry[c_index]
+               json_output.append(tmp_json_output)
+     except sqlite3.Error:
           return "Error fetching cards with given parameters", 500 
-     except Exception:
+     except Exception as e:
+          print(e)
           return "Request invalid", 500
-     return output, 200
+     return json_output, 200
 
 # API: create cards
 @flask_app.route("/cards/create", methods=["POST"])
@@ -184,7 +194,7 @@ def create_cards():
      
      try: 
           data = request.json 
-          deck_name = data["deck_name"]
+          deck_name = data["deck"]
           disabled = data.get("disabled", 1)
           if disabled != 0: 
                disabled = 1
@@ -212,6 +222,60 @@ def create_cards():
           return "Request invalid", 500
      return "success", 200
 
+# API: learn cards
+@flask_app.route("/cards/learn", methods=["POST"])
+def learn_cards(): 
+     db_con = get_db()
+     db_cur = db_con.cursor()
+     card_output = {} 
+     
+     try: 
+          data = request.json
+          card_id = data["card_id"]
+          grade = data["grade"]
+          
+          # fetch old interval, repetitions, easiness_factor
+          db_cur.execute("SELECT * FROM cards WHERE id=?", (card_id,))
+          output = db_cur.fetchone()
+          output_columns = [desc[0] for desc in db_cur.description]
+          tmp_card_output = {}
+          
+          for c_index, column in enumerate(output_columns):
+               tmp_card_output[column] = output[c_index] 
+          
+          # calculate the new interval, repetitions, easiness_factor 
+          updated_schedule = calculate_schedule(tmp_card_output["interval_number"],
+                                                tmp_card_output["repetitions"],
+                                                tmp_card_output["ef_number"],
+                                                grade)
+          
+          # update interval, repetitions, easiness_factor
+          db_cur.execute('''UPDATE cards
+                            SET interval_date=?,
+                                interval_number=?,
+                                ef_number=?,
+                                repetitions=? WHERE id=?''', 
+                         (updated_schedule["interval_date"], 
+                          updated_schedule["interval_number"],
+                          updated_schedule["easiness_factor"],
+                          updated_schedule["repetitions"],
+                          card_id,))
+          db_con.commit()
+               
+          # set the output 
+          db_cur.execute("SELECT * FROM cards WHERE id=?", (card_id,))
+          output = db_cur.fetchone()
+          output_columns = [desc[0] for desc in db_cur.description]
+          
+          for c_index, column in enumerate(output_columns):
+               card_output[column] = output[c_index]
+     except sqlite3.Error as e:
+          print(e)
+          return "Error working with card's learning state", 500
+     except Exception as e:
+          print(e)
+          return "Request invalid", 500
+     return card_output, 200
 
 # API: delete cards
 # API: move cards

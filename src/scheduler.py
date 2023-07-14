@@ -18,7 +18,7 @@ def calculate_ef(easiness_factor, grade):
 def calculate_repetitions(grade, repetitions):
     if (grade == 0):
         return 0
-    return ++repetitions
+    return repetitions + 1
 
 def calculate_interval(interval, repetitions, easiness_factor):
     now = datetime.now() 
@@ -33,7 +33,18 @@ def calculate_interval(interval, repetitions, easiness_factor):
     else: 
         output_interval = round(interval * easiness_factor)
     
-    return [
-        now + timedelta(minutes=output_interval),
-        output_interval
-    ]
+    return {
+        "interval_date": now + timedelta(minutes=output_interval),
+        "interval_number": output_interval
+    } 
+
+def calculate_schedule(interval, repetitions, easiness_factor, grade):
+    easiness_factor = calculate_ef(easiness_factor, grade)
+    repetitions = calculate_repetitions(grade, repetitions)
+    interval = calculate_interval(interval, repetitions, easiness_factor)
+    return {
+        "easiness_factor": easiness_factor,
+        "repetitions": repetitions,
+        "interval_date": interval["interval_date"],
+        "interval_number": interval["interval_number"],
+    }
